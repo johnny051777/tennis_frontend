@@ -1,0 +1,1137 @@
+<!-- http://127.0.0.1:8000/chatroom (聊天室) -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>聊天室</title>
+
+    <!-- Firebase SDK v9 -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js"></script>
+
+    <!--  全域樣式與 Reset -->
+    <style>
+        :root {
+            --navbar-height: 60px;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Noto Sans TC", "Segoe UI", sans-serif;
+            background: #f2f2f2;
+            margin: 0;
+            padding: 0 0;
+        }
+        h1, h2 {
+            color: #ffffff;
+            background-color: #494747; /* 淺灰色背景，可依需求修改 */
+        }
+        p {
+            font-size: 1.1em;
+            color: #444;
+            margin-bottom: 10px;
+        }
+    </style>
+
+    <!-- 導覽列樣式 -->
+    <style>
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--navbar-height);
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 999;
+        }
+
+        .navbar .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .navbar .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .navbar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-links a:hover {
+            color: #4CAF50;
+        }
+    </style>
+
+    <!-- 內容區域樣式 -->
+    <style>
+        .content {
+            margin-top: calc(var(--navbar-height) + 0px);
+            padding: 0px 0px;
+            position: relative;
+            background: radial-gradient(circle at center, #eaffea 0%, #ffffff 100%);
+            overflow: hidden;
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+
+    <!-- 動態背景圓形 -->
+    <style>
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .circle.green {
+            background-color: #A5D6A7;
+        }
+
+        .circle.white {
+            background-color: #F1F8E9;
+        }
+
+        .circle1 {
+            width: 120px;
+            height: 120px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .circle2 {
+            width: 200px;
+            height: 200px;
+            top: 60%;
+            left: 70%;
+            animation-delay: 2s;
+        }
+
+        .circle3 {
+            width: 80px;
+            height: 80px;
+            top: 40%;
+            left: 50%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-30px) rotate(360deg);
+            }
+        }
+    </style>
+
+    <!-- 聊天室外觀 -->
+    <style>
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - var(--navbar-height)); /* 除掉導航列高度 */
+            width: 100%;
+            background: #f8f9fa;
+            padding: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: linear-gradient(to bottom, #e8f5e9, #ffffff);
+        }
+
+        .chat-message {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+            position: relative; /* 為內部絕對定位按鈕提供參考 */
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .message-content {
+            max-width: 70%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .username {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #388e3c;
+            margin-bottom: 3px;
+        }
+
+        .chat-bubble {
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            word-wrap: break-word;
+            position: relative; /* 新增這行 */
+        }
+        
+        .bubble-actions {
+            position: absolute;
+            right: -50px; /* 負值讓按鈕出現在氣泡右邊外面 */
+            bottom: 5px;
+        }
+
+        .bubble-actions button {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .chat-message.own {
+            flex-direction: row-reverse;
+        }
+
+        .chat-message.own .chat-bubble {
+            background: #4caf50;
+            color: white;
+        }
+
+        .chat-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #13a818; /* 綠色底，讓輸入區更清楚 */
+        }
+
+        .chat-input input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            outline: none;
+        }
+
+        .chat-input textarea {
+            flex: 1;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            outline: none;
+        }
+
+        .chat-input button {
+            padding: 10px 16px;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .chat-input button:hover {
+            opacity: 0.9;
+        }
+
+        .reply-button{
+            color: #555;
+            font-size: 0.9em; 
+            margin-bottom: 5px;
+        }
+
+        .chat-time {
+            font-size: 0.75rem;
+            color: gray;
+            margin-top: 3px;
+            text-align: right;
+        }
+
+        .video {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+        .ai-message {
+            padding: 5px;
+            margin: 3px;
+            background-color: #dff6ff;
+            border-radius: 5px;
+            font-style: italic;
+            text-align: left;
+        }
+
+    </style>
+    
+    <!--表情符號外觀-->
+    <style>
+        .reaction-btn {
+            display: none;
+            position: absolute;
+            bottom: 5px;
+            right: -10px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 18px;
+        }
+
+        .chat-bubble:hover .reaction-btn {
+            display: inline;
+        }
+
+        .reaction-display {
+            position: absolute;
+            bottom: 30px;
+            right: -35px;
+            font-size: 14px;
+        }
+    </style>
+    <!-- 預覽區外觀 -->
+    <style>
+        .preview-area {
+            border: 1px solid #000000;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 20px;
+            background: #bafb75;
+            display: none; /* 預設隱藏 */
+            transition: all 0.3s ease; /* 平滑顯示 */
+            margin-left: 15px;        /* 左邊留白 */
+
+            max-width: 50%;       /* 只佔畫面一半寬 */
+            align-self: flex-start; /* 靠左，可改成 flex-end 讓右邊 */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .preview-area img,
+        .preview-area video {
+            max-width: 200px;
+            margin: 5px;
+            border-radius: 8px;
+        }
+        .preview-area p {
+            margin: 5px 0;
+            font-size: 14px;
+            word-wrap: break-word; /* 文字過長換行 */
+        }
+    </style>
+
+    <!--活動表單外觀-->
+    <style>
+        .event-form {
+            margin: 10px 0;
+            padding: 12px;
+            background: #fff8e1;
+            border: 1px solid #ffe58f;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-size: 14px;
+        }
+
+        .event-form input,
+        .event-form textarea {
+            padding: 8px 10px;
+            border: 1px solid #ffd666;
+            border-radius: 6px;
+            outline: none;
+            font-size: 14px;
+            transition: border 0.2s;
+        }
+        .event-form input:focus,
+        .event-form textarea:focus {
+            border-color: #faad14;
+        }
+
+        /* === 活動訊息氣泡 === */
+        .event-bubble {
+            background: #fffbe6;
+            border: 1px solid #ffe58f;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin: 8px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 90%;   /* 不要佔滿畫面，像對話框 */
+            min-width: 300px; /* 避免太窄 */
+            word-wrap: break-word;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        /* 活動標題 */
+        .event-title {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 6px;
+            color: #d48806;
+        }
+
+        /* 活動資訊（日期/時間/地點） */
+        .event-info {
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #444;
+        }
+
+        /* 參加人數 */
+        .event-participants {
+            font-size: 13px;
+            margin-top: 5px;
+            color: #555;
+        }
+
+        /* === 按鈕樣式 === */
+        .event-join-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #52c41a;
+            color: #fff;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .event-join-btn:hover:not(:disabled) {
+            background: #389e0d;
+        }
+        .event-join-btn:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+        .event-join-btn:disabled {
+            background: #b7eb8f;
+            cursor: not-allowed;
+            color: #333;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">網球助手</div>
+        <div class="nav-links">
+            <a href="index">首頁</a>
+            <a href="rules">規則解說</a>
+            <a href="score">記分板</a>
+            <a href="videos">影片解說</a>
+            <a href="wall_training">對牆練習</a>
+            <a href="serve_practice">發球練習</a>
+            <a href="swing_practice">揮拍練習</a>
+            <a href="throwing_practice">拋球練習</a>
+            <a href="chatroom">聊天室</a>
+        </div>
+    </div>
+
+    <!-- 聊天室 -->
+    <div class="content">
+        <div class="chat-container">
+            <h2>聊天室</h2>
+            <!-- 訊息顯示區 -->
+            <div id="chat-messages" class="chat-messages"></div>
+
+            <!-- 預覽區 -->
+            <div id="preview" class="preview-area"></div>
+            <div id="replyNotice" class="reply-button"></div>
+            <!-- 輸入區 -->
+            <div class="chat-input">
+                
+                <textarea id="messageInput" placeholder="輸入訊息..." rows="1"></textarea>
+                <input type="file" id="imageInput" accept="image/*" style="display:none" />
+                <input type="file" id="videoInput" accept="video/*" style="display:none" />
+                <button id="createEventBtn">活動</button>
+                <button id="uploadImageBtn">picture</button>
+                <button id="uploadVideoBtn">video</button>
+                <button id="aiBtn">AI</button>
+                <button id="sendBtn">送出</button>
+
+                <!-- 活動輸入表單 (預設隱藏) -->
+                <div id="eventForm" class="event-form" style="display:none;">
+                    <input type="text" id="eventDate" placeholder="日期 (MM/DD)">
+                    <input type="text" id="eventTime" placeholder="時間 (HH:MM)">
+                    <input type="text" id="eventLocation" placeholder="地點">
+                    <button id="sendEventBtn">發佈活動</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded,update,onChildRemoved, onChildChanged, runTransaction } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+
+        // === Firebase 配置 ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyCZIUNh1YUTlFo7p81a7pLxM6woYkmwlZo",
+            authDomain: "tennis-system.firebaseapp.com",
+            databaseURL: "https://tennis-system-default-rtdb.firebaseio.com",
+            projectId: "tennis-system",
+            storageBucket: "tennis-system.firebasestorage.app",
+            messagingSenderId: "894451128494",
+            appId: "1:894451128494:web:ac40a3c44006c35532753f",
+            measurementId: "G-KGCHWBEGM2"
+        };
+
+        // === 初始化 ===
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const storage = getStorage(app);
+
+        const messagesDiv = document.getElementById('chat-messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        let replyTargetKey = null;  // 存放當前回覆的訊息 key
+        const replyNotice = document.getElementById('replyNotice');  // 顯示回覆對象
+        const uploadImageBtn = document.getElementById('uploadImageBtn');
+        const uploadVideoBtn = document.getElementById('uploadVideoBtn');
+        const imageInput = document.getElementById('imageInput');
+        const videoInput = document.getElementById('videoInput');
+        const previewDiv = document.getElementById('preview');
+        //活動相關
+        const createEventBtn = document.getElementById('createEventBtn');
+        const eventForm = document.getElementById('eventForm');
+        const sendEventBtn = document.getElementById('sendEventBtn');
+        const eventDate = document.getElementById('eventDate');
+        const eventTime = document.getElementById('eventTime');
+        const eventLocation = document.getElementById('eventLocation');
+        //AI
+        const aiBtn = document.getElementById('aiBtn'); 
+
+        const messagesRef = ref(db, 'chatroom/messages');
+
+        // === 監聽訊息 ===
+        onChildAdded(messagesRef, (snapshot) => {
+            const data = snapshot.val();
+            const key = snapshot.key;
+
+            const msgEl = document.createElement('div');
+            msgEl.className = 'chat-message';
+            msgEl.dataset.key = key;
+
+            const avatar = document.createElement('img');
+            avatar.className = 'avatar';
+            avatar.src = data.avatar || '/static/default-avatar.png';
+
+            const contentEl = document.createElement('div');
+            contentEl.className = 'message-content';
+
+            const usernameEl = document.createElement('div');
+            usernameEl.className = 'username';
+            usernameEl.textContent = data.user;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+
+            // 軟刪除過濾
+            if (!data || data.deleted) return;
+
+            // 判斷訊息類型，給不同 class 樣式(ai與人)
+            if (data.type === "ai") {
+                msgEl.classList.add("ai-message");
+            }
+
+            // 建立回覆按鈕區塊
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'bubble-actions';
+            const replyBtn = document.createElement('button');
+
+            actionsDiv.appendChild(replyBtn);
+            bubble.appendChild(actionsDiv);
+
+            // === 活動訊息 ===
+            if (data.type === "event") {
+                bubble.classList.add("event-bubble");
+
+                const title = document.createElement('div');
+                title.className = "event-title";
+                title.textContent = "🎾 網球活動邀請";
+
+                const info = document.createElement('div');
+                info.className = "event-info";
+                info.innerHTML = `
+                    📅 日期: ${data.date}<br>
+                    🕒 時間: ${data.time}<br>
+                    📍 地點: ${data.location}
+                `;
+
+                const participants = document.createElement('div');
+                participants.className = "event-participants";
+                participants.textContent = `目前參加人數: ${data.participants || 0}`;
+
+                const joinBtn = document.createElement('button');
+                joinBtn.className = "event-join-btn";
+                joinBtn.textContent = "參加";
+
+                joinBtn.addEventListener('click', () => {
+                    const newCount = (data.participants || 0) + 1;
+                    update(ref(db, `chatroom/messages/${key}`), { participants: newCount });
+                    participants.textContent = `目前參加人數: ${newCount}`;
+                    joinBtn.disabled = true;
+                });
+
+                bubble.appendChild(title);
+                bubble.appendChild(info);
+                bubble.appendChild(participants);
+                bubble.appendChild(joinBtn);
+            }
+
+            // === 文字 ===
+            if (data.text) {
+                if (data.type !== "event") {
+                    const textEl = document.createElement('p');
+                    textEl.innerHTML = data.text.replace(/\n/g, '<br>');
+                    bubble.appendChild(textEl);
+                }
+            }
+
+            // === 圖片 ===
+            if (data.imageUrl) {
+                const imgEl = document.createElement('img');
+                imgEl.src = data.imageUrl;
+                imgEl.className = 'upload-preview';
+                imgEl.onclick = () => window.open(data.imageUrl, "_blank");
+
+                // 如果圖片載入失敗 → 自動刪掉該訊息
+                imgEl.onerror = async () => {
+                    console.warn("圖片不存在，已移除:", data.imageUrl);
+                    msgEl.remove();
+                    try {
+                        await update(ref(db, `chatroom/messages/${key}`), { deleted: true });
+                    } catch (err) {
+                        console.error("刪除 Firebase 訊息失敗:", err);
+                    }
+                };
+
+                // 限制圖片大小
+                imgEl.onload = () => {
+                    if (imgEl.naturalWidth > 400 || imgEl.naturalHeight > 400) {
+                        imgEl.style.maxWidth = "400px";
+                        imgEl.style.maxHeight = "400px";
+                        imgEl.style.objectFit = "contain";
+                    }
+                };
+
+                bubble.appendChild(imgEl);
+            }
+
+            // === 影片 ===
+            if (data.videoUrl) {
+                const videoEl = document.createElement('video');
+                videoEl.src = data.videoUrl;
+                videoEl.controls = true;
+                videoEl.preload = "metadata";
+                videoEl.style.maxHeight = "300px";
+
+                // 如果影片載入失敗 → 自動刪掉該訊息
+                videoEl.onerror = async () => {
+                    console.warn("影片不存在，已移除:", data.videoUrl);
+                    msgEl.remove();
+                    try {
+                        await update(ref(db, `chatroom/messages/${key}`), { deleted: true });
+                    } catch (err) {
+                        console.error("刪除 Firebase 訊息失敗:", err);
+                    }
+                };
+
+                bubble.appendChild(videoEl);
+            }
+
+            // === 回覆按鈕 ===
+            replyBtn.className = 'reply-btn';
+            replyBtn.textContent = '回覆';
+            replyBtn.addEventListener('click', () => {
+                replyTargetKey = key;  // 記錄要回覆的訊息 key
+                messageInput.focus();
+            });
+            actionsDiv.appendChild(replyBtn);
+            bubble.appendChild(actionsDiv);
+
+            // === 表情符號功能 ===
+            const reactionBtn = document.createElement('button');
+            reactionBtn.className = 'reaction-btn';
+            reactionBtn.textContent = '👍';
+
+            reactionBtn.addEventListener('click', () => {
+                const currentReactions = data.reactions || {};
+                const newCount = (currentReactions['👍'] || 0) + 1;
+                update(ref(db, `chatroom/messages/${key}`), {
+                    reactions: { ...currentReactions, '👍': newCount }
+                });
+            });
+
+            const reactionDisplay = document.createElement('div');
+            reactionDisplay.className = 'reaction-display';
+            if (data.reactions) {
+                reactionDisplay.textContent = Object.entries(data.reactions)
+                    .map(([emoji, count]) => `${emoji} ${count}`)
+                    .join(' ');
+            }
+
+            bubble.appendChild(reactionBtn);
+            bubble.appendChild(reactionDisplay);
+
+
+            // === 顯示回覆內容 (如果訊息是回覆別人的) ===
+            if (data.replyTo) {
+                const parentEl = messagesDiv.querySelector(`[data-key="${data.replyTo}"]`);
+                if (parentEl) {
+                    const replyEl = document.createElement('div');
+                    replyEl.className = 'reply-preview';
+                    replyEl.textContent = `回覆 ${parentEl.querySelector('.username').textContent}`;
+                    bubble.insertBefore(replyEl, bubble.firstChild);
+                }
+            }
+
+            const timeEl = document.createElement('div');
+            timeEl.className = 'chat-time';
+            timeEl.textContent = new Date(data.timestamp).toLocaleTimeString();
+
+            bubble.appendChild(timeEl);
+            contentEl.appendChild(usernameEl);
+            contentEl.appendChild(bubble);
+            msgEl.appendChild(avatar);
+            msgEl.appendChild(contentEl);
+
+            messagesDiv.appendChild(msgEl);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+
+        // === 監聽刪除 ===
+        onChildRemoved(messagesRef, (snapshot) => {
+            const key = snapshot.key;
+            const msgEl = messagesDiv.querySelector(`[data-key="${key}"]`);
+            if (msgEl) msgEl.remove();
+        });
+
+        // === 監聽訊息更新 (表情符號等) ===
+        onChildChanged(messagesRef, (snapshot) => {
+            const key = snapshot.key;
+            const data = snapshot.val();
+
+            // 找到該訊息 DOM
+            const msgEl = messagesDiv.querySelector(`[data-key="${key}"]`);
+            if (!msgEl) return;
+
+            // 找到 reactionDisplay
+            const reactionDisplay = msgEl.querySelector('.reaction-display');
+            if (!reactionDisplay) return;
+
+            // 更新 reactions 顯示
+            if (data.reactions) {
+                reactionDisplay.textContent = Object.entries(data.reactions)
+                    .map(([emoji, count]) => `${emoji} ${count}`)
+                    .join(' ');
+            } else {
+                reactionDisplay.textContent = '';
+            }
+        });
+
+        // === 發送文字 ===
+        sendBtn.addEventListener('click', () => sendPost());
+        //=== 綁定 AI 按鈕 ===
+        aiBtn.addEventListener('click', () => sendAIMessage()); 
+        // === 發送一則貼文 ===
+        async function sendPost() {
+            const text = messageInput.value.trim();
+            const imageFile = imageInput.files[0];
+            const videoFile = videoInput.files[0];
+            
+            let imageUrl = null;
+            let videoUrl = null;
+
+            // 上傳圖片
+            if (imageFile) {
+                const imgPath = `chat_images/${Date.now()}_${imageFile.name}`;
+                const imgRef = storageRef(storage, imgPath);
+
+                const { progressBar, progressText } = showUploadProgress("圖片");
+                const uploadTask = uploadBytesResumable(imgRef, imageFile);
+
+                await new Promise((resolve, reject) => {
+                    uploadTask.on('state_changed',
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            progressBar.style.width = `${progress}%`;
+                            progressText.textContent = `正在上傳圖片... ${progress.toFixed(0)}%`;
+                        },
+                        reject,
+                        async () => {
+                            imageUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                            resolve();
+                        }
+                    );
+                });
+            }
+
+            // 上傳影片
+            if (videoFile) {
+                const vidPath = `chat_videos/${Date.now()}_${videoFile.name}`;
+                const vidRef = storageRef(storage, vidPath);
+
+                const { progressBar, progressText } = showUploadProgress("影片");
+                const uploadTask = uploadBytesResumable(vidRef, videoFile);
+
+                await new Promise((resolve, reject) => {
+                    uploadTask.on('state_changed',
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            progressBar.style.width = `${progress}%`;
+                            progressText.textContent = `正在上傳影片... ${progress.toFixed(0)}%`;
+                        },
+                        reject,
+                        async () => {
+                            videoUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                            resolve();
+                        }
+                    );
+                });
+            }
+
+            // push 貼文
+            push(messagesRef, {
+                user: "管理員",
+                text: text || null,
+                imageUrl: imageUrl || null,
+                videoUrl: videoUrl || null,
+                replyTo: replyTargetKey || null, // 新增回覆欄位
+                type: "user",
+                timestamp: Date.now()
+            });
+
+            // 清空輸入框
+            messageInput.value = '';
+            imageInput.value = '';
+            videoInput.value = '';
+            previewDiv.innerHTML = ''; 
+            replyTargetKey = null;
+            replyNotice.textContent = '';
+        }
+
+        // === 發送一則貼文給AI  ===
+        async function sendAIMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return alert("請先輸入要問 AI 的內容！");
+
+            // 先推送思考中訊息，並保存 reference
+            let thinkingMessageRef = null;
+            try {
+                thinkingMessageRef = await push(messagesRef, {
+                    user: "AI 助手",
+                    text: "🤖 正在思考中...",
+                    type: "ai",
+                    timestamp: Date.now()
+                });
+                console.log("思考訊息已推送");
+            } catch (error) {
+                console.error("推送思考訊息失敗:", error);
+                alert("系統錯誤，請稍後再試");
+                return;
+            }
+
+            try {
+                console.log("正在呼叫 AI API...");
+                
+                // 呼叫後端 /chatgpt API
+                const res = await fetch("/chatgpt", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: text })
+                });
+
+                console.log("API 回應狀態:", res.status);
+
+                if (!res.ok) {
+                    throw new Error(`HTTP 錯誤: ${res.status}`);
+                }
+
+                const data = await res.json();
+                console.log("AI API 回應資料:", data);
+
+                // 處理回應資料
+                let aiReply = '';
+
+                if (data.error) {
+                    // API 返回錯誤（如配額超限）
+                    aiReply = data.error;
+                    console.warn("AI API 錯誤:", data.error_type || 'unknown', data.error);
+                } else if (data.reply && typeof data.reply === 'string' && data.reply.trim()) {
+                    // 正常回應
+                    aiReply = data.reply.trim();
+                } else {
+                    // 回應格式異常或空回應
+                    aiReply = "抱歉，AI 助理目前無法正常回應，請稍後再試。";
+                    console.warn("AI 回應格式異常:", data);
+                }
+
+                // 雙重檢查確保回應不為空
+                if (!aiReply || aiReply === '' || aiReply === 'undefined') {
+                    aiReply = "抱歉，我暫時無法回應您的問題。";
+                }
+
+                console.log("處理後的 AI 回應:", aiReply);
+
+                // 刪除思考中訊息
+                if (thinkingMessageRef && thinkingMessageRef.key) {
+                    try {
+                        await update(ref(db, `chatroom/messages/${thinkingMessageRef.key}`), {
+                            deleted: true
+                        });
+                        console.log("思考訊息已刪除");
+                    } catch (deleteError) {
+                        console.error("刪除思考訊息失敗:", deleteError);
+                    }
+                }
+
+                // 推送 AI 回應
+                const aiMessageData = {
+                    user: "AI 助手",
+                    text: aiReply,
+                    type: "ai",
+                    timestamp: Date.now()
+                };
+
+                console.log("準備推送 AI 訊息:", aiMessageData);
+
+                await push(messagesRef, aiMessageData);
+                console.log("AI 訊息推送成功");
+
+            } catch (error) {
+                console.error("AI API 錯誤:", error);
+
+                // 刪除思考中訊息
+                if (thinkingMessageRef && thinkingMessageRef.key) {
+                    try {
+                        await update(ref(db, `chatroom/messages/${thinkingMessageRef.key}`), {
+                            deleted: true
+                        });
+                    } catch (deleteError) {
+                        console.error("刪除思考訊息失敗:", deleteError);
+                    }
+                }
+
+                // 推送錯誤訊息
+                try {
+                    await push(messagesRef, {
+                        user: "AI 助手",
+                        text: "❌ 抱歉，AI 服務暫時無法回應，請稍後再試。",
+                        type: "ai",
+                        timestamp: Date.now()
+                    });
+                    console.log("錯誤訊息推送成功");
+                } catch (pushError) {
+                    console.error("推送錯誤訊息失敗:", pushError);
+                    alert("AI 服務發生錯誤，請稍後再試");
+                }
+            }
+
+            // 清空輸入框
+            messageInput.value = '';
+            updatePreview();
+        }
+        
+        // --- 監聽 Enter / Shift+Enter ---
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // 阻止換行
+                sendPost();         // 送出訊息
+            }
+        });
+
+        // === 顯示上傳進度訊息 ===
+        function showUploadProgress(fileType) {
+            const msgEl = document.createElement('div');
+            msgEl.className = 'chat-message';
+
+            const avatar = document.createElement('img');
+            avatar.className = 'avatar';
+            avatar.src = '/static/default-avatar.png';
+
+            const contentEl = document.createElement('div');
+            contentEl.className = 'message-content';
+
+            const usernameEl = document.createElement('div');
+            usernameEl.className = 'username';
+            usernameEl.textContent = "管理員";
+
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+
+            // 進度文字
+            const progressText = document.createElement('div');
+            progressText.textContent = `正在上傳 ${fileType}... 0%`;
+            progressText.style.marginBottom = '5px';
+
+            // 進度條
+            const progressBar = document.createElement('div');
+            progressBar.style.height = "8px";
+            progressBar.style.width = "0%";
+            progressBar.style.background = "#4caf50";
+            progressBar.style.borderRadius = "4px";
+            progressBar.style.transition = "width 0.3s";
+
+            bubble.appendChild(progressText);
+            bubble.appendChild(progressBar);
+
+            contentEl.appendChild(usernameEl);
+            contentEl.appendChild(bubble);
+            msgEl.appendChild(avatar);
+            msgEl.appendChild(contentEl);
+
+            messagesDiv.appendChild(msgEl);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // 回傳兩個元素方便上傳事件更新
+            return { progressBar, progressText };
+        }
+        
+
+        // === 上傳圖片 ===
+        uploadImageBtn.addEventListener('click', () => imageInput.click());
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            // 上傳後不用 push，等 sendPost() 呼叫時再送
+        });
+
+        // === 上傳影片 === 
+        uploadVideoBtn.addEventListener('click', () => videoInput.click());
+        videoInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            // 上傳後不用 push，等 sendPost() 呼叫時再送
+        });
+
+        // === 發佈活動 ===
+        eventDate.addEventListener('input', updatePreview);
+        eventTime.addEventListener('input', updatePreview);
+        eventLocation.addEventListener('input', updatePreview);
+        createEventBtn.addEventListener('click', () => {
+            eventForm.style.display = eventForm.style.display === 'none' ? 'block' : 'none';
+        });
+
+        sendEventBtn.addEventListener('click', () => {
+            const date = eventDate.value.trim();
+            const time = eventTime.value.trim();
+            const location = eventLocation.value.trim();
+
+            if (!date || !time || !location) {
+                alert("請填寫完整的活動資訊！");
+                return;
+            }
+
+            push(messagesRef, {
+                user: "管理員",
+                type: "event",
+                date,
+                time,
+                location,
+                participants: 0,
+                timestamp: Date.now()
+            });
+
+            // 清空表單並隱藏
+            eventDate.value = '';
+            eventTime.value = '';
+            eventLocation.value = '';
+            eventForm.style.display = 'none';
+            previewDiv.innerHTML = '';
+        });
+
+
+        // === 預覽區 ===
+        messageInput.addEventListener('input', updatePreview);
+        imageInput.addEventListener('change', updatePreview);
+        videoInput.addEventListener('change', updatePreview);
+        function updatePreview() {
+            previewDiv.innerHTML = ''; 
+            let hasContent = false;
+
+            // 文字
+            if (messageInput.value.trim()) {
+                const textEl = document.createElement('p');
+                textEl.innerHTML = messageInput.value.trim().replace(/\n/g, '<br>');
+                previewDiv.appendChild(textEl);
+                hasContent = true;
+            }
+
+            // 圖片
+            if (imageInput.files[0]) {
+                const imgEl = document.createElement('img');
+                imgEl.src = URL.createObjectURL(imageInput.files[0]);
+                imgEl.className = 'upload-preview';
+                previewDiv.appendChild(imgEl);
+                hasContent = true;
+            }
+
+            // 影片
+            if (videoInput.files[0]) {
+                const videoEl = document.createElement('video');
+                videoEl.src = URL.createObjectURL(videoInput.files[0]);
+                videoEl.controls = true;
+                videoEl.style.maxHeight = "200px";
+                previewDiv.appendChild(videoEl);
+                hasContent = true;
+            }
+
+            // 活動預覽
+            if (eventDate.value.trim() || eventTime.value.trim() || eventLocation.value.trim()) {
+                const eventPreview = document.createElement('div');
+                eventPreview.className = 'event-bubble';
+                eventPreview.innerHTML = `
+                    <div class="event-title">🎾 活動預覽</div>
+                    <div class="event-info">
+                        📅 日期: ${eventDate.value || '-'}<br>
+                        🕒 時間: ${eventTime.value || '-'}<br>
+                        📍 地點: ${eventLocation.value || '-'}
+                    </div>
+                `;
+                previewDiv.appendChild(eventPreview);
+                hasContent = true;
+            }
+
+            // 只有有內容才顯示
+            previewDiv.style.display = hasContent ? 'block' : 'none';
+        }
+
+        // === 發送訊息統一方法 ===
+        function sendMessage(data) {
+            const user = "管理員"; // 固定管理員
+            push(messagesRef, { user, ...data, timestamp: Date.now() });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!--http://127.0.0.1:8000/rules（規則頁面）-->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ data.title }}</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", "Arial", sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            border-left: 6px solid #3498db;
+            padding-left: 10px;
+            background-color: #ecf0f1;
+            padding: 10px;
+            margin-top: 40px;
+        }
+
+        h3 {
+            color: #2980b9;
+            margin-top: 20px;
+        }
+
+        ul {
+            list-style: disc;
+            padding-left: 30px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        strong {
+            color: #2c3e50;
+        }
+
+        .section {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+    </style>
+    <style>
+    :root {
+        --navbar-height: 60px;
+    }
+
+    /* 基本重置 */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* 導覽列樣式 */
+    .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--navbar-height);
+        background: linear-gradient(to right, #4facfe, #00f2fe);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 999;
+    }
+
+    /* Logo 或標題 */
+    .navbar .logo {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+    }
+
+    /* 導覽按鈕群組 */
+    .navbar .nav-links {
+        display: flex;
+        gap: 20px;
+    }
+
+    /* 每個連結按鈕樣式 */
+    .navbar a {
+        text-decoration: none;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        transition: background 0.3s;
+    }
+
+    .navbar a:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* 用來示意頁面內容 */
+    .content {
+        margin-top: calc(var(--navbar-height) + 20px);
+        padding: 20px;
+    }
+    </style>
+</head>
+<body>
+    
+    <div class="navbar">
+        <div class="logo">網球助手</div>
+        <div class="nav-links">
+            <a href="index">首頁</a>
+            <a href="rules">規則解說</a>
+            <a href="score">記分板</a>
+            <a href="videos">影片解說</a>
+            <a href="wall_training">對牆練習</a>
+            <a href="serve_practice">發球練習</a>
+            <a href="swing_practice">揮拍練習</a>
+            <a href="throwing_practice">拋球練習</a>
+            <a href="chatroom">聊天室</a>
+        </div>
+    </div>
+    <div class="content">
+        <h1>{{ data.title }}</h1>
+    </div>
+    <div class="section">
+        <h2>一、比賽結構</h2>
+        <p>{{ data.structure['比賽結構'] }}</p>
+    </div>
+
+    <div class="section">
+        <h2>二、計分規則</h2>
+        <p><strong>說明：</strong> {{ data.scoring['說明'] }}</p>
+        <p><strong>比賽盤數：</strong> {{ data.scoring['比賽盤數'] }}</p>
+
+        <h3>六局制</h3>
+        <ul>
+            <li>{{ data.scoring['盤']['六局制']['說明'] }}</li>
+            <li><strong>決勝局：</strong> {{ data.scoring['盤']['六局制']['決勝局'] }}</li>
+        </ul>
+
+        <h3>八局制</h3>
+        <ul>
+            <li>{{ data.scoring['盤']['八局制']['說明'] }}</li>
+            <li><strong>長盤制：</strong> {{ data.scoring['盤']['八局制']['長盤制'] }}</li>
+            <li><strong>決勝局：</strong> {{ data.scoring['盤']['八局制']['決勝局'] }}</li>
+        </ul>
+
+        <h3>得分系統</h3>
+        <ul>
+            {% for k, v in data.scoring['得分系統'].items() %}
+                {% if v is iterable and not v is string %}
+                    {% for item in v %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                {% else %}
+                    <li>{{ k }}: {{ v }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>三、雙打規則</h2>
+        <ul>
+            {% for key, value in data.doubles.items() %}
+                <li><strong>{{ key }}:</strong> {{ value }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>四、單打規則</h2>
+        <ul>
+            {% for key, value in data.singles.items() %}
+                <li><strong>{{ key }}:</strong> {{ value }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>五、換場與發球</h2>
+        <ul>
+            {% for key, value in data.changeover_service.items() %}
+                <li><strong>{{ key }}:</strong> {{ value }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
+
+

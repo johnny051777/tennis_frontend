@@ -1,0 +1,461 @@
+<!--http://127.0.0.1:8000/wall_training（對牆練習頁面）-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>對牆練習紀錄</title>
+    <!-- 📊 圖表插件 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <!--  全域樣式與 Reset -->
+    <style>
+        :root {
+            --navbar-height: 60px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Noto Sans TC", "Segoe UI", sans-serif;
+            background: #f2f2f2;
+            margin: 0;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        p {
+            font-size: 1.1em;
+            color: #444;
+            margin-bottom: 10px;
+        }
+    </style>
+
+    <!-- 導覽列樣式 -->
+    <style>
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--navbar-height);
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 999;
+        }
+
+        .navbar .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .navbar .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .navbar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-links a:hover {
+            color: #4CAF50;
+        }
+    </style>
+
+    <!-- 內容區域樣式 -->
+    <style>
+        .content {
+            margin-top: calc(var(--navbar-height) + 20px);
+            padding: 60px 20px;
+            position: relative;
+            background: radial-gradient(circle at center, #eaffea 0%, #ffffff 100%);
+            overflow: hidden;
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+
+    <!-- 動態背景圓形 -->
+    <style>
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .circle.green {
+            background-color: #A5D6A7;
+        }
+
+        .circle.white {
+            background-color: #F1F8E9;
+        }
+
+        .circle.deepgreen{
+            background-color: #17761a;
+        }
+
+        .circle1 {
+            width: 120px;
+            height: 120px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .circle2 {
+            width: 200px;
+            height: 200px;
+            top: 60%;
+            left: 70%;
+            animation-delay: 2s;
+        }
+
+        .circle3 {
+            width: 80px;
+            height: 80px;
+            top: 40%;
+            left: 50%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-30px) rotate(360deg);
+            }
+        }
+    </style>
+
+    <!-- 圖表區樣式 -->
+    <style>
+        .charts {
+            display: flex;
+            flex-wrap: nowrap;/* 不允許換行 */
+            gap: 30px;
+            /*justify-content: center;*/ /* 讓裡面的圖表靠中 */
+        }
+        .charts > div {
+            background: #f5f5f5;      /* 背景灰白一點，避免太深 */
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        canvas {
+            max-width: 400px;
+            margin-top: 30px;
+        }
+    </style>
+
+    <style>
+        .coach { 
+            background: #d4d4d4; 
+            border-radius: 12px; 
+            padding: 12px 14px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,.06); 
+            margin-top: 14px; 
+        }
+        .coach h3 { font-size: 16px; margin-bottom: 6px; }
+        .coach ul { padding-left: 18px; }
+        .coach li { margin: 4px 0; }
+    </style>
+    <!-- 🎯 落點圖區 -->
+    <style>
+        #score-zone {
+            width: 400px;
+            height: 400px;
+            background-color: white;
+            border: 2px solid #ccc;
+            position: relative;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #score-square {
+            position: absolute;
+            border: 2px dashed #4CAF50;
+            background: rgba(76, 175, 80, 0.3);
+            box-sizing: border-box;
+        }
+
+        .ball-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            opacity: 0.8;
+            transition: transform 0.2s;
+        }
+
+        .ball-dot:hover {
+            transform: scale(1.8);
+            z-index: 10;
+        }
+
+        .ball-dot.out {
+            background-color: #F44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">網球助手</div>
+        <div class="nav-links">
+            <a href="index">首頁</a>
+            <a href="rules">規則解說</a>
+            <a href="score">記分板</a>
+            <a href="videos">影片解說</a>
+            <a href="wall_training">對牆練習</a>
+            <a href="serve_practice">發球練習</a>
+            <a href="swing_practice">揮拍練習</a>
+            <a href="throwing_practice">拋球練習</a>
+            <a href="chatroom">聊天室</a>
+        </div>
+    </div>
+    <div class="content">
+        <!-- 動態背景圓形 -->
+        <div class="circle green circle1"></div>
+        <div class="circle deepgreen circle2"></div>
+        <div class="circle green circle3"></div>
+        <div class="main-content">
+            <h1>🎾 對牆練習紀錄</h1>
+            <p>本次練習時間：{{ data.summary.duration_sec }} 秒</p>
+            <p>總擊球數：{{ data.summary.total_hits }} 球</p>
+            <p>得分區大小：{{ data.summary.score_zone_size_cm }} cm × {{ data.summary.score_zone_size_cm }} cm</p>
+            <p>落在得分區內：{{ data.summary.in_score_zone }} 球</p>
+            <p>落在得分區外：{{ data.summary.out_score_zone }} 球</p>
+
+            <div class="charts">
+                <div>
+                    <h2>落點分布圓餅圖</h2>
+                    <canvas id="pieChart"></canvas>
+                </div>
+                <div>
+                    <h2>每分鐘擊球數</h2>
+                    <canvas id="hitsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="coach" id="coach-panel" style="display:none;">
+                <h3>📌 自動分析與建議</h3>
+                <ul id="coach-list"></ul>
+            </div>
+
+            <h2>牆壁上的落點示意圖</h2>
+            <div id="score-zone">
+                <div id="score-square"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script id="wall-data" type="application/json">
+        {{ data.records | tojson }}
+    </script>
+
+    <script id="wall-summary" type="application/json">
+        {{ data.summary | tojson }}
+    </script>
+
+    <script>
+        // 解析資料
+        const data = JSON.parse(document.getElementById("wall-data").textContent);
+        const summary = JSON.parse(document.getElementById("wall-summary").textContent);
+
+        // 得分區在牆上的大小（比例映射到 400x400 px）
+        const wallWidthPx = 400;
+        const wallHeightPx = 400;
+
+        // === 牆面區域：取得實際寬高（cv2 座標系） ===
+        const wallTopLeft = summary.wall_area.corner_1;  // 假設 corner_1 是 top-left
+        const wallBottomRight = summary.wall_area.corner_2; // 假設 corner_3 是 bottom-right
+
+        const wallWidth = Math.abs(wallBottomRight.x - wallTopLeft.x);
+        const wallHeight = Math.abs(wallBottomRight.y - wallTopLeft.y);
+
+        // === 得分區位置換算成 400x400 區域的相對位置 ===
+        const topLeft = {
+            x: (summary.score_zone.top_left.x - wallTopLeft.x) / wallWidth * wallWidthPx,
+            y: (summary.score_zone.top_left.y - wallTopLeft.y) / wallHeight * wallHeightPx
+        };
+        const bottomRight = {
+            x: (summary.score_zone.bottom_right.x - wallTopLeft.x) / wallWidth * wallWidthPx,
+            y: (summary.score_zone.bottom_right.y - wallTopLeft.y) / wallHeight * wallHeightPx
+        };
+
+        // 畫出得分區
+        const width = Math.abs(bottomRight.x - topLeft.x);
+        const height = Math.abs(bottomRight.y - topLeft.y);
+
+        const scoreSquare = document.getElementById("score-square");
+        scoreSquare.style.position = "absolute";
+        scoreSquare.style.left = topLeft.x + "px";
+        scoreSquare.style.top = topLeft.y + "px";
+        scoreSquare.style.width = width + "px";
+        scoreSquare.style.height = height + "px";
+
+        // 顯示球點（同樣以牆面區域為參考）
+        const scoreZone = document.getElementById("score-zone");
+
+        data.forEach(ball => {
+            const dot = document.createElement("div");
+            dot.classList.add("ball-dot");
+            if (!ball.in_score_zone) dot.classList.add("out");
+
+            // 將 ball 座標換算為相對牆面比例，再映射到 400x400
+            dot.style.left = ((ball.ball_position.x - wallTopLeft.x) / wallWidth * wallWidthPx - 3) + "px";
+            dot.style.top = ((ball.ball_position.y - wallTopLeft.y) / wallHeight * wallHeightPx - 3) + "px";
+
+            scoreZone.appendChild(dot);
+        });
+
+        // 落點圓餅圖
+        const inZoneCount = summary.in_score_zone;
+        const outZoneCount = summary.out_score_zone;
+
+        new Chart(document.getElementById("pieChart"), {
+            type: "pie",
+            data: {
+                labels: ["得分區內", "得分區外"],
+                datasets: [{
+                    data: [inZoneCount, outZoneCount],
+                    backgroundColor: ["#4CAF50", "#F44336"]
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        // 計時內擊球數棒狀圖 (模擬 6 個 10 秒區間擊球數)
+        // 先將球依時間分區間
+        const duration = summary.duration_sec;
+        const intervals = 6;
+        const intervalLength = duration / intervals;
+
+        // 將擊球依時間分類
+        const hitsPerInterval = Array(intervals).fill(0);
+        const startTime = new Date(data[0]?.timestamp || Date.now());
+
+        data.forEach(ball => {
+            const t = new Date(ball.timestamp);
+            const diffSec = (t - startTime) / 1000;
+            const idx = Math.min(Math.floor(diffSec / intervalLength), intervals - 1);
+            hitsPerInterval[idx]++;
+        });
+
+        const hitsCtx = document.getElementById("hitsChart").getContext("2d");
+        new Chart(hitsCtx, {
+            type: "bar",
+            data: {
+                labels: Array.from({length: intervals}, (_, i) => `${Math.floor(i*intervalLength)}-${Math.floor((i+1)*intervalLength)}秒`),
+                datasets: [{
+                    label: "擊球數",
+                    data: hitsPerInterval,
+                    backgroundColor: "#2196F3"
+                }]
+            },
+            options: {
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    </script>
+
+    <!-- 擊球評估建議 -->
+    <script>
+        // === 優化教練建議生成 ===
+        const coachPanel = document.getElementById("coach-panel");
+        const coachList = document.getElementById("coach-list");
+        coachList.innerHTML = ""; // 清空原有
+
+        const totalHits = hitsPerInterval.reduce((a,b)=>a+b,0);
+        const percentPerInterval = hitsPerInterval.map(h => h / totalHits);
+
+        // 計算穩定度：標準差 / 平均
+        const meanHits = totalHits / intervals;
+        const variance = hitsPerInterval.reduce((sum, h) => sum + Math.pow(h - meanHits, 2), 0) / intervals;
+        const stdDev = Math.sqrt(variance);
+        const stability = 1 - stdDev / (meanHits || 1); // 越接近 1 越穩定
+
+        let suggestions = [];
+
+        // 1️⃣ 前中後區段分析
+        const maxIdx = percentPerInterval.indexOf(Math.max(...percentPerInterval));
+        if(maxIdx === 0){
+            suggestions.push("球集中在練習前段，建議加強穩定度與持續力。");
+        }else if(maxIdx === intervals-1){
+            suggestions.push("球集中在練習後段，注意起始階段的準備與反應速度。");
+        }else{
+            suggestions.push("球集中在中段，保持良好節奏，但注意前後穩定度。");
+        }
+
+        // 2️⃣ 穩定度分析
+        if(stability < 0.7){
+            suggestions.push("擊球分布不均，穩定度較低，建議慢下節奏並保持一致擊球。");
+        }else{
+            suggestions.push("擊球穩定度良好，持續保持。");
+        }
+
+        // 3️⃣ 節奏分析
+        const maxPercent = Math.max(...percentPerInterval);
+        const minPercent = Math.min(...percentPerInterval);
+        if(maxPercent - minPercent > 0.3){
+            suggestions.push("擊球節奏不均，注意維持均勻擊球速度。");
+        }
+
+        // 4️⃣ 總擊球數檢查
+        if(totalHits < 10){
+            suggestions.push("總擊球數較少，建議延長練習時間以增加練習量。");
+        }
+
+        // 5️⃣ 命中率趨勢分析（需要每個區間 in_score_zone 數據，可選）
+        if(summary.hits_in_score_zone_per_interval){
+            const hitsInZone = summary.hits_in_score_zone_per_interval;
+            const rateDecline = hitsInZone[0] > hitsInZone[intervals-1];
+            if(rateDecline){
+                suggestions.push("練習後段命中率下降，注意體能與集中力。");
+            }
+        }
+
+        // 將建議寫入列表
+        if(suggestions.length === 0){
+            suggestions.push("擊球分布均勻，穩定度良好，繼續保持！");
+        }
+
+        suggestions.forEach(text => {
+            const li = document.createElement("li");
+            li.textContent = text;
+            coachList.appendChild(li);
+        });
+
+        coachPanel.style.display = "block"; // 顯示教練建議
+
+    </script>
+</body>
+</html>

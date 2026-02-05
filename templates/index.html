@@ -1,0 +1,169 @@
+<!--http://127.0.0.1:8000/index（主頁）-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>home_page</title>
+    <style>
+        :root {
+            --navbar-height: 60px;
+            --main-green: #6BCB77;
+            --main-white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--main-white);
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--navbar-height);
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 999;
+        }
+
+        .navbar .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .navbar .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .navbar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .content {
+            margin-top: calc(var(--navbar-height) + 20px);
+            padding: 60px 20px;
+            height: 90vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #eaffea 0%, #ffffff 100%);
+            overflow: hidden;
+        }
+
+        .slogan {
+            text-align: center;
+            color: #2E7D32;
+            z-index: 1;
+        }
+
+        .slogan h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .slogan p {
+            font-size: 1.5rem;
+            color: #4CAF50;
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .circle.green {
+            background-color: #A5D6A7;
+        }
+
+        .circle.white {
+            background-color: #F1F8E9;
+        }
+
+        .circle1 {
+            width: 120px;
+            height: 120px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .circle2 {
+            width: 200px;
+            height: 200px;
+            top: 60%;
+            left: 70%;
+            animation-delay: 2s;
+        }
+
+        .circle3 {
+            width: 80px;
+            height: 80px;
+            top: 40%;
+            left: 50%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-30px) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">網球助手</div>
+        <div class="nav-links">
+            <a href="index">首頁</a>
+            <a href="rules">規則解說</a>
+            <a href="score">記分板</a>
+            <a href="videos">影片解說</a>
+            <a href="wall_training">對牆練習</a>
+            <a href="serve_practice">發球練習</a>
+            <a href="swing_practice">揮拍練習</a>
+            <a href="throwing_practice">拋球練習</a>
+            <a href="chatroom">聊天室</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="slogan">
+            <h1>讓學習網球變得更聰明一些</h1>
+            <p>您的智慧網球教練</p>
+        </div>
+        <!-- 動態背景圓形 -->
+        <div class="circle green circle1"></div>
+        <div class="circle white circle2"></div>
+        <div class="circle green circle3"></div>
+    </div>
+</body>
+</html>

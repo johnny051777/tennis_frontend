@@ -1,0 +1,482 @@
+<!--http://127.0.0.1:8000/throwing_practice 拋球練習-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>拋球練習</title>
+     <!-- 圖表插件 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- 全域樣式與 Reset -->
+    <style>
+        :root {
+            --navbar-height: 60px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Noto Sans TC", "Segoe UI", sans-serif;
+            background: #f2f2f2;
+            margin: 0;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        p {
+            font-size: 1.1em;
+            color: #444;
+            margin-bottom: 10px;
+        }
+    </style>
+
+    <!-- 導覽列樣式 -->
+    <style>
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--navbar-height);
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 999;
+        }
+
+        .navbar .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .navbar .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .navbar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-links a:hover {
+            color: #4CAF50;
+        }
+    </style>
+
+    <!-- 內容區域樣式 -->
+    <style>
+        .content {
+            margin-top: calc(var(--navbar-height) + 20px);
+            padding: 60px 20px;
+            position: relative;
+            background: radial-gradient(circle at center, #eaffea 0%, #ffffff 100%);
+            overflow: hidden;
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+
+    <!-- 動態背景圓形 -->
+    <style>
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .circle.green {
+            background-color: #A5D6A7;
+        }
+
+        .circle.white {
+            background-color: #F1F8E9;
+        }
+
+        .circle1 {
+            width: 120px;
+            height: 120px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .circle2 {
+            width: 200px;
+            height: 200px;
+            top: 60%;
+            left: 70%;
+            animation-delay: 2s;
+        }
+
+        .circle3 {
+            width: 80px;
+            height: 80px;
+            top: 40%;
+            left: 50%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-30px) rotate(360deg);
+            }
+        }
+    </style>
+
+    <!-- 圖表區樣式 -->
+    <style>
+        .charts {
+            display: flex;
+            flex-wrap: nowrap;/* 不允許換行 */
+            gap: 30px;
+            /*justify-content: center;*/ /* 讓裡面的圖表靠中 */
+        }
+        .charts > div {
+            background: #f5f5f5;      /* 背景灰白一點，避免太深 */
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        canvas {
+            max-width: 400px;
+            margin-top: 30px;
+        }
+    </style>
+
+    <!-- 📄 表格樣式 -->
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        th, td {
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">網球助手</div>
+        <div class="nav-links">
+            <a href="index">首頁</a>
+            <a href="rules">規則解說</a>
+            <a href="score">記分板</a>
+            <a href="videos">影片解說</a>
+            <a href="wall_training">對牆練習</a>
+            <a href="serve_practice">發球練習</a>
+            <a href="swing_practice">揮拍練習</a>
+            <a href="throwing_practice">拋球練習</a>
+            <a href="chatroom">聊天室</a>
+        </div>
+    </div>
+    <div class="content">
+            <!-- 動態背景圓形 -->
+        <div class="circle green circle1"></div>
+        <div class="circle white circle2"></div>
+        <div class="circle green circle3"></div>
+        <div class="main-content">
+        <h1>🎾 拋球練習紀錄</h1>
+        
+        <div class="charts">
+            <div>
+                <h2>拋球成功與失敗</h2>
+                <canvas id="successChart"></canvas>
+            </div>
+            <div>
+                <h2>拋球位置分布</h2>
+                <canvas id="scatterChart"></canvas>
+            </div>
+            <div>
+                <h2>拋球誤差</h2>
+                <canvas id="heightChart"></canvas>
+            </div>
+        </div>
+
+        <h2>系統總結評語</h2>
+        <p>
+            {% set comments = {} %}
+            {% set counts = namespace(elbow_error=0, waist_error=0, hand_foot_error=0) %}
+            {% set total_records = data.records | length %}
+
+            {% for r in data.records %}
+                {% set elbow_ok = 167 <= r.posture_reminder.swing_posture.elbow_straight <= 173 %}
+                {% set waist_ok = r.posture_reminder.swing_posture.waist_straight > 40 %}
+                {% set hand_foot_ok = r.posture_reminder.dominant_hand_and_foot.dominant_hand == 'right'
+                    and r.posture_reminder.dominant_hand_and_foot.front_foot == 'left' %}
+
+                {% if not elbow_ok %}
+                    {% set counts.elbow_error = counts.elbow_error + 1 %}
+                {% endif %}
+                {% if not waist_ok %}
+                    {% set counts.waist_error = counts.waist_error + 1 %}
+                {% endif %}
+                {% if not hand_foot_ok %}
+                    {% set counts.hand_foot_error = counts.hand_foot_error + 1 %}
+                {% endif %}
+
+                {% if elbow_ok and waist_ok and r.throw_successful %}
+                    {% set comment = "姿勢穩定，拋球成功，表現良好。" %}
+                {% elif (elbow_ok or waist_ok) and r.throw_successful %}
+                    {% set comment = "姿勢需微調，但成功率還不錯。" %}
+                {% elif elbow_ok and waist_ok %}
+                    {% set comment = "姿勢不錯但穩定度需加強。" %}
+                {% else %}
+                    {% set comment = "姿勢需要再調整。" %}
+                {% endif %}
+
+                {% set _ = comments.update({comment: comments.get(comment, 0) + 1}) %}
+            {% endfor %}
+
+            {% set most_common = comments | dictsort(true, 'value') | first %}
+            {% if most_common %}
+                <strong>{{ most_common[0] }}</strong>
+            {% else %}
+                <strong>沒有數據</strong>
+            {% endif %}
+
+            <p>手肘錯誤次數：{{ counts.elbow_error }} / {{ total_records }}</p>
+            <p>腰部錯誤次數：{{ counts.waist_error }} / {{ total_records }}</p>
+            <p>手腳錯誤次數：{{ counts.hand_foot_error }} / {{ total_records }}</p>
+        </p>
+
+        <h3>建議：</h3>
+        <ul>
+            {% if total_records > 0 and (counts.elbow_error / total_records) > 0.4 %}
+                <li>拋球時，手肘需再多伸直。</li>
+            {% endif %}
+            {% if total_records > 0 and counts.waist_error / total_records > 0.4 %}
+                <li>拋球時需配合腰部轉動，避免僅靠手臂發力。</li>
+            {% endif %}
+            {% if total_records > 0 and counts.hand_foot_error / total_records > 0.4 %}
+                <li>預備動作，請維持左腳在前，右腳在後，保持平衡。</li>
+            {% endif %}
+
+            {% if total_records > 0 and counts.elbow_error / total_records <= 0.4
+                and counts.waist_error / total_records <= 0.4
+                and counts.hand_foot_error / total_records <= 0.4 %}
+                <li>目前沒有特別需要調整的建議，請持續保持！</li>
+            {% endif %}
+        </ul>
+
+
+        <h2>詳細紀錄</h2>
+        <table border="1" cellpadding="8" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>目標高度 (m)</th>
+                    <th>實際 X 位置 (m)</th>
+                    <th>實際 Y 高度 (m)</th>
+                    <th>手肘角度 (167°~173°)</th>
+                    <th>腰部角度 (>40°)</th>
+                    <th>慣用手/前腳</th>
+                    <th>是否成功</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in data.records %}
+                {% set elbow_angle = r.posture_reminder.swing_posture.elbow_straight %}
+                {% set waist_angle = r.posture_reminder.swing_posture.waist_straight %}
+                {% set elbow_ok = 167 <= elbow_angle <= 173 %}
+                {% set waist_ok = waist_angle > 40 %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ "%.2f"|format(r.target_height) }}</td>
+                    <td>{{ "%.2f"|format(r.current_position.x) }}</td>
+                    <td>{{ "%.2f"|format(r.current_position.y) }}</td>
+                    
+                    <!-- 手肘角度 -->
+                    <td>
+                        {{ elbow_angle }}°
+                        {{ '✔️' if elbow_ok else '❌' }}
+                    </td>
+                    <!-- 腰部角度 -->
+                    <td>
+                        {{ waist_angle }}°
+                        {{ '✔️' if waist_ok else '❌' }}
+                    </td>
+                    <!-- 慣用手/前腳 -->
+                    <td>
+                        {{ r.posture_reminder.dominant_hand_and_foot.dominant_hand }}/
+                        {{ r.posture_reminder.dominant_hand_and_foot.front_foot }}
+                    </td>
+                    <!-- 是否成功 -->
+                    <td>
+                        {% if r.success %}
+                            <span style="color: green;">✔️ 成功</span>
+                        {% else %}
+                            <span style="color: red;">❌ 失敗</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align:center;color:#666;">沒有紀錄</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- JSON 資料 -->
+    <script id="throwing-data" type="application/json">
+        {{ data | tojson }}
+    </script>
+    <!-- 圖表與資料處理 -->
+    <script>
+        // 從 HTML 取得資料
+        const data = JSON.parse(document.getElementById("throwing-data").textContent);
+        const records = data.records;
+        const summary = data.summary;
+
+        // 成功 vs 失敗 圓餅圖
+        const ctxPie = document.getElementById('successChart').getContext('2d');
+        new Chart(ctxPie, {
+            type: 'pie',
+            data: {
+                labels: ['成功', '失敗'],
+                datasets: [{
+                    data: [summary.success_count, summary.fail_count],
+                    backgroundColor: ['#4caf50', '#f44336']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '拋球成功 vs 失敗'
+                    }
+                }
+            }
+        });
+
+        // 拋球位置散佈圖
+        const scatterData = records.map(r => ({
+            x: r.current_position.x,
+            y: r.current_position.y
+        }));
+        const ctxScatter = document.getElementById('scatterChart').getContext('2d');
+        new Chart(ctxScatter, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: '拋球位置',
+                    data: scatterData,
+                    backgroundColor: '#2196f3'
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'X 位置 (公尺)'
+                        },
+                        min: -0.6,
+                        max: 0.6
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Y 位置 / 高度 (公尺)'
+                        },
+                        min: 1.0,
+                        max: 3.0
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '拋球實際位置分布圖'
+                    }
+                }
+            }
+        });
+
+        // 高度誤差 長條圖
+        const ctxBar = document.getElementById('heightChart').getContext('2d');
+        const heightDifferences = records.map((r, i) => ({
+            x: `#${i + 1}`,
+            y: Math.abs(r.current_position.y - r.target_height)
+        }));
+
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: heightDifferences.map(p => p.x),
+                datasets: [{
+                    label: '高度誤差 (公尺)',
+                    data: heightDifferences.map(p => p.y),
+                    backgroundColor: '#ff9800'
+                }]
+            },
+            options: {
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '每次拋球與目標高度的誤差'
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: '誤差 (公尺)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // 表格內容填入
+        /*
+        const tbody = document.getElementById("recordTableBody");
+        records.forEach((r, i) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${i + 1}</td>
+                <td>${r.target_height.toFixed(2)}</td>
+                <td>${r.current_position.x.toFixed(2)}</td>
+                <td>${r.current_position.y.toFixed(2)}</td>
+                <td>${r.success ? "✅" : "❌"}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        */
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>網球比賽記分板</title>
+    <style>
+        :root {
+            --navbar-height: 60px;
+        }
+
+        /* ====== 基本重置 ====== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* ====== 導覽列樣式 ====== */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--navbar-height);
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 999;
+        }
+
+        .navbar .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .navbar .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .navbar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 頁面主體區塊（避免被導覽列擋住） */
+        .content {
+            margin-top: calc(var(--navbar-height) + 20px);
+            padding: 20px;
+        }
+
+        /* ====== 記分板樣式 ====== */
+        .scoreboard {
+            background-color: #009045;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 800px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .players {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .player {
+            background-color: white;
+            border-radius: 5px;
+            padding: 10px 20px;
+            flex: 1;
+            margin: 0 10px;
+            text-align: center;
+        }
+
+        .score-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .score-section {
+            background-color: white;
+            border-radius: 5px;
+            padding: 10px;
+            flex: 1 1 30%;
+        }
+
+        .score-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .score-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .score-name {
+            width: 80px;
+            text-align: left;
+        }
+
+        .score-value {
+            font-size: 24px;
+            width: 30px;
+            text-align: center;
+        }
+
+        .score-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .serving {
+            background-color: #ffcc00;
+        }
+
+        .reset-button {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .reset-button button {
+            background-color: #f44336;
+            padding: 10px 20px;
+        }
+
+        .reset-button button:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">網球助手</div>
+        <div class="nav-links">
+            <a href="index">首頁</a>
+            <a href="rules">規則解說</a>
+            <a href="score">記分板</a>
+            <a href="videos">影片解說</a>
+            <a href="wall_training">對牆練習</a>
+            <a href="serve_practice">發球練習</a>
+            <a href="swing_practice">揮拍練習</a>
+            <a href="throwing_practice">拋球練習</a>
+            <a href="chatroom">聊天室</a>
+        </div>
+    </div>
+    <div class="scoreboard">
+        <div class="header">
+            <h1>網球比賽記分板</h1>
+        </div>
+        <div class="players">
+            <div class="player" id="player1">
+                <h2>球員 1</h2>
+                <input type="text" id="player1Name" placeholder="输入球員1姓名" value="球員 1">
+            </div>
+            <div class="player" id="player2">
+                <h2>球員 2</h2>
+                <input type="text" id="player2Name" placeholder="输入球員2姓名" value="球員 2">
+            </div>
+        </div>
+        
+        <div class="score-container">
+            
+            <div class="score-section">
+                <div class="score-label">盤數(sets)</div>
+                <div class="score-display">
+                    <div class="score-name" id="p1NameSets">球員 1</div>
+                    <div class="score-value" id="p1Sets">0</div>
+                    <div class="score-buttons">
+                        <button onclick="adjustSets(1, 1)">+</button>
+                        <button onclick="adjustSets(1, -1)">-</button>
+                    </div>
+                </div>
+                <div class="score-display">
+                    <div class="score-name" id="p2NameSets">球員 2</div>
+                    <div class="score-value" id="p2Sets">0</div>
+                    <div class="score-buttons">
+                        <button onclick="adjustSets(2, 1)">+</button>
+                        <button onclick="adjustSets(2, -1)">-</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="score-section">
+                <div class="score-label">局數(games)</div>
+                <div class="score-display">
+                    <!--<div class="score-name" id="p1NameGames"></div>-->
+                    <div class="score-name">  </div>
+                    <div class="score-value" id="p1Games">0</div>
+                    <div class="score-buttons">
+                        <button onclick="adjustGames(1, 1)">+</button>
+                        <button onclick="adjustGames(1, -1)">-</button>
+                    </div>
+                </div>
+                <div class="score-display">
+                    <!--<div class="score-name" id="p2NameGames"></div>-->
+                    <div class="score-name">  </div>
+                    <div class="score-value" id="p2Games">0</div>
+                    <div class="score-buttons">
+                        <button onclick="adjustGames(2, 1)">+</button>
+                        <button onclick="adjustGames(2, -1)">-</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="score-section">
+                <div class="score-label">局內分(points)</div>
+                <div class="score-display">
+                    <!--<div class="score-name" id="p1NamePoints">球員 1</div>-->
+                    <div class="score-name">  </div>
+                    <div class="score-value" id="p1Points">0</div>
+                    <div class="score-buttons">
+                        <button onclick="adjustPoints(1, 1)">+</button>
+                        <button onclick="adjustPoints(1, -1)">-</button>
+                    </div>
+                </div>
+                <div class="score-display">
+                    <!--<div class="score-name" id="p2NamePoints">球員 2</div>-->
+                    <div class="score-name">  </div>
+                    <div class="score-value" id="p2Points">0</div>
+                    <div class="score-buttons">
+                        <button onclick="adjustPoints(2, 1)">+</button>
+                        <button onclick="adjustPoints(2, -1)">-</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!--
+        <div class="score-container" style="margin-top: 20px;">
+            <div class="score-section">
+                <div class="score-label">發球</div>
+                <div style="display: flex; justify-content: space-around;">
+                    <button id="serveP1" onclick="toggleServe(1)" class="serving">球員 1 發球</button>
+                    <button id="serveP2" onclick="toggleServe(2)">球員 2 發球</button>
+                </div>
+            </div>
+        </div>
+        -->
+        <div class="reset-button">
+            <button onclick="resetScores()">重置比分</button>
+        </div>
+    </div>
+
+    <script>
+        // 初始化分数
+        let scores = {
+            p1: {points: 0, games: 0, sets: 0},
+            p2: {points: 0, games: 0, sets: 0}
+        };
+
+        // 是否處於決勝局
+        let isTiebreak = false;
+        
+        // 局内分数的展示
+        const pointsDisplay = ['0', '15', '30', '40', 'A'];
+        
+        // 更新球员名字
+        function updatePlayerNames() {
+            const p1Name = document.getElementById('player1Name').value;
+            const p2Name = document.getElementById('player2Name').value;
+            
+            //document.getElementById('p1NamePoints').textContent = p1Name;
+            //document.getElementById('p1NameGames').textContent = p1Name;
+            document.getElementById('p1NameSets').textContent = p1Name;
+            
+            //document.getElementById('p2NamePoints').textContent = p2Name;
+            //document.getElementById('p2NameGames').textContent = p2Name;
+            document.getElementById('p2NameSets').textContent = p2Name;
+            
+            document.getElementById('serveP1').textContent = p1Name + " 發球";
+            document.getElementById('serveP2').textContent = p2Name + " 發球";
+        }
+        
+        // 调整局内分
+        function adjustPoints(player, amount) {
+            const playerKey = player === 1 ? 'p1' : 'p2';
+            const otherPlayer = player === 1 ? 'p2' : 'p1';
+            
+            // 在标准分数范围内调整
+            if (scores[playerKey].points < 3) {
+                scores[playerKey].points = Math.max(0, scores[playerKey].points + amount);
+            } else {
+                // 处理优势分
+                if (amount > 0) {
+                    if (scores[playerKey].points === 3 && scores[otherPlayer].points < 3) {
+                        // 球员赢得了这一局
+                        adjustGames(player, 1);
+                        scores['p1'].points = 0;
+                        adjustPoints(1, 0)
+                        scores['p2'].points = 0;
+                        adjustPoints(2, 0)
+                        return;
+                    } else if (scores[playerKey].points === 3 && scores[otherPlayer].points === 3) {
+                        // 进入优势分
+                        scores[playerKey].points = 4;
+                    } else if (scores[playerKey].points === 4) {
+                        // 优势分赢得了这一局
+                        adjustGames(player, 1);
+                        scores['p1'].points = 0;
+                        adjustPoints(1, 0)
+                        scores['p2'].points = 0;
+                        adjustPoints(2, 0)
+                        return;
+                    }
+                } else {
+                    // 处理减分
+                    if (scores[playerKey].points === 4) {
+                        // 从优势分回到平分
+                        scores[playerKey].points = 3;
+                    } else {
+                        scores[playerKey].points = Math.max(0, scores[playerKey].points + amount);
+                    }
+                }
+            }
+            
+            updateScoreDisplay();
+        }
+        
+        // 调整局数
+        function adjustGames(player, amount) {
+            const playerKey = player === 1 ? 'p1' : 'p2';
+            const otherPlayer = player === 1 ? 'p2' : 'p1';
+            scores[playerKey].games = Math.max(0, scores[playerKey].games + amount);
+            
+            // 「6局」者為勝，先對手2局
+            if (scores[playerKey].games == 6 && scores[playerKey].games - scores[otherPlayer].games >= 2) {
+                adjustSets(player, 1);
+                scores['p1'].games = 0;
+                scores['p2'].games = 0;
+            }
+            // 「5局」vs「5局」進入決勝局
+            if(scores[playerKey].games == 5 &&scores[otherPlayer].games ==5){
+                isTiebreak = true;
+            }
+            // 判斷決勝局
+            if(isTiebreak==true){
+                if(scores[playerKey].games == 7){
+                    adjustSets(player, 1);
+                    scores['p1'].games = 0;
+                    scores['p2'].games = 0;
+                    isTiebreak = false;
+                }
+            }
+            
+            updateScoreDisplay();
+        }
+        
+        // 调整盘数
+        function adjustSets(player, amount) {
+            const playerKey = player === 1 ? 'p1' : 'p2';
+            scores[playerKey].sets = Math.max(0, scores[playerKey].sets + amount);
+            updateScoreDisplay();
+        }
+        
+        // 更新分数显示
+        function updateScoreDisplay() {
+            // 更新局内分
+            document.getElementById('p1Points').textContent = scores.p1.points < 4 ? pointsDisplay[scores.p1.points] : 'A';
+            document.getElementById('p2Points').textContent = scores.p2.points < 4 ? pointsDisplay[scores.p2.points] : 'A';
+            
+            // 更新局数和盘数
+            document.getElementById('p1Games').textContent = scores.p1.games;
+            document.getElementById('p2Games').textContent = scores.p2.games;
+            document.getElementById('p1Sets').textContent = scores.p1.sets;
+            document.getElementById('p2Sets').textContent = scores.p2.sets;
+        }
+        
+        // 切换发球方
+        function toggleServe(player) {
+            if (player === 1) {
+                document.getElementById('serveP1').classList.add('serving');
+                document.getElementById('serveP2').classList.remove('serving');
+            } else {
+                document.getElementById('serveP1').classList.remove('serving');
+                document.getElementById('serveP2').classList.add('serving');
+            }
+        }
+        
+        // 重置所有分数
+        function resetScores() {
+            scores = {
+                p1: {points: 0, games: 0, sets: 0},
+                p2: {points: 0, games: 0, sets: 0}
+            };
+            updateScoreDisplay();
+        }
+        
+        // 设置球员名字变更事件
+        document.getElementById('player2Name').addEventListener('input', updatePlayerNames);
+        document.getElementById('player1Name').addEventListener('input', updatePlayerNames);
+        
+        // 初始化
+        updatePlayerNames();
+    </script>
+</body>
+</html>

@@ -1,0 +1,595 @@
+<!--http://127.0.0.1:8000/serve_practice（發球練習頁面）-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>發球練習紀錄</title>
+
+    <!-- 📊 圖表插件 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- 🎨 全域樣式與 Reset -->
+    <style>
+        :root {
+            --navbar-height: 60px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+            background: #f2f2f2;
+            margin: 10px;
+            padding: 0px 0px;
+        }
+    </style>
+
+    <!--  導覽列樣式 -->
+    <style>
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--navbar-height);
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 999;
+        }
+
+        .navbar .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .navbar .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .navbar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+
+    <!--  表格樣式 -->
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        th, td {
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #ddd;
+        }
+    </style>
+
+    <!-- 📊 圖表區塊 -->
+    <style>
+        .charts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .charts > div {
+            background: #f5f5f5;      /* 背景灰白一點，避免太深 */
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        canvas {
+            max-width: 400px;
+            margin-top: 30px;
+        }
+    </style>
+
+    <!--  背景動畫圓形 -->
+    <style>
+        .content {
+            margin-top: calc(var(--navbar-height) + 20px);
+            padding: 0px 0px;
+            position: relative;
+            background: radial-gradient(circle at center, #eaffea 0%, #ffffff 100%);
+            overflow: hidden;
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .circle.green {
+            background-color: #A5D6A7;
+        }
+
+        .circle.white {
+            background-color: #F1F8E9;
+        }
+
+        .circle1 {
+            width: 120px;
+            height: 120px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .circle2 {
+            width: 200px;
+            height: 200px;
+            top: 60%;
+            left: 70%;
+            animation-delay: 2s;
+        }
+
+        .circle3 {
+            width: 80px;
+            height: 80px;
+            top: 40%;
+            left: 50%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-30px) rotate(360deg);
+            }
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">網球助手</div>
+        <div class="nav-links">
+            <a href="index">首頁</a>
+            <a href="rules">規則解說</a>
+            <a href="score">記分板</a>
+            <a href="videos">影片解說</a>
+            <a href="wall_training">對牆練習</a>
+            <a href="serve_practice">發球練習</a>
+            <a href="swing_practice">揮拍練習</a>
+            <a href="throwing_practice">拋球練習</a>
+            <a href="chatroom">聊天室</a>
+        </div>
+    </div>
+    <div class="content">
+            <!-- 動態背景圓形 -->
+        <div class="circle green circle1"></div>
+        <div class="circle white circle2"></div>
+        <div class="circle green circle3"></div>
+        <div class="main-content">
+            <h1>🎾 發球練習紀錄</h1>
+            <p>以下是最近的發球練習紀錄，包含姿勢提醒與落點分析</p>
+            <div class="charts">
+                <!-- 圓餅圖 -->
+                <div>
+                    <h2>發球成功比例</h2>
+                    <canvas id="successChart"></canvas>
+                </div>
+                <!-- 成功高度分析 -->
+                <div>
+                    <h2>成功發球的拋球高度</h2>
+                    <canvas id="heightChart"></canvas>
+                </div>
+                <!-- 平均落點 -->
+                <div>
+                    <h2>成功發球的落點位置分布</h2>
+                    <canvas id="positionChart" width="250" height="300" style="max-width: 100%; height: auto;"></canvas>
+                </div>
+            </div>
+            <h2>系統總結評語</h2>
+            <p>
+                {% set comments = {} %}
+                {% set counts = namespace(elbow_error=0, waist_error=0, hand_foot_error=0) %}
+                {% set total_records = data.records | length %}
+
+                {% for record in data.records %}
+                    <!--<p>手肘角度: {{ record.posture_reminder.swing_posture.elbow_straight }}</p>
+                    <p>腰部角度: {{ record.posture_reminder.swing_posture.waist_straight }}</p>-->
+                    {% set elbow_ok = 167 <= record.posture_reminder.swing_posture.elbow_straight <= 173 %}
+                    {% set waist_ok = record.posture_reminder.swing_posture.waist_straight > 40 %}
+                    {% set hand_foot_ok = record.posture_reminder.dominant_hand_and_foot.dominant_hand == 'right' and record.posture_reminder.dominant_hand_and_foot.front_foot == 'left' %}
+
+                    {% if not elbow_ok %}
+                        {% set counts.elbow_error = counts.elbow_error + 1 %}
+                    {% endif %}
+
+                    {% if not waist_ok %}
+                        {% set counts.waist_error = counts.waist_error + 1 %}
+                    {% endif %}
+
+                    {% if not hand_foot_ok %}
+                        {% set counts.hand_foot_error = counts.hand_foot_error + 1 %}
+                    {% endif %}
+
+                    {% if elbow_ok and waist_ok and record.landing_analysis.serve_successful %}
+                        {% set comment = "姿勢穩定，發球成功，表現良好。" %}
+                    {% elif (elbow_ok or waist_ok) and record.landing_analysis.serve_successful %}
+                        {% set comment = "姿勢需微調，但成功率還不錯。" %}
+                    {% elif elbow_ok and waist_ok %}
+                        {% set comment = "姿勢不錯但準確率需加強。" %}
+                    {% else %}
+                        {% set comment = "姿勢需要再調整。" %}
+                    {% endif %}
+
+                    {% set _ = comments.update({comment: comments.get(comment, 0) + 1}) %}
+                {% endfor %}
+
+                {% set most_common = comments | dictsort(true, 'value') | first %}
+                {% if most_common %}
+                    <strong>{{ most_common[0] }}</strong>
+                {% else %}
+                    <strong>沒有數據</strong>
+                {% endif %}
+                <p>手肘錯誤次數：{{ counts.elbow_error }} / {{ total_records }}</p>
+                <p>腰部錯誤次數：{{ counts.waist_error }} / {{ total_records }}</p>
+                <p>手腳錯誤次數：{{ counts.hand_foot_error }} / {{ total_records }}</p>
+            </p>
+
+            <h3>建議：</h3>
+            <ul>
+                {% if total_records > 0 and (counts.elbow_error / total_records) > 0.4 %}
+                    <li>拋球時，手肘需再多伸直。</li>
+                {% endif %}
+                {% if total_records > 0 and counts.waist_error / total_records > 0.4 %}
+                    <li>擊球時需多轉動腰部，否則可能會造成手腕或肩膀受傷。</li>
+                {% endif %}
+                {% if total_records > 0 and counts.hand_foot_error / total_records > 0.4 %}
+                    <li>預備動作，請維持左腳在前，右腳在後，等待擊球。</li>
+                {% endif %}
+
+                {% if total_records > 0 and counts.elbow_error / total_records <= 0.4 
+                    and counts.waist_error / total_records <= 0.4 
+                    and counts.hand_foot_error / total_records <= 0.4 %}
+                    <li>目前沒有特別需要調整的建議，請持續保持！</li>
+                {% endif %}
+            </ul>
+            <!-- 表格 -->
+            <h2>詳細紀錄</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>時間</th>
+                        <th>拋球高度</th>
+                        <th>球位置 (x, y, z)</th>
+                        <th>手肘角度 (正確範圍 167°~173°)</th>
+                        <th>腰部角度 (>40°)</th>
+                        <th>慣用手/前腳</th>
+                        <th>發球成功</th>
+                        <th>落點座標</th>
+                        <th>查看位置</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in data.records %}
+                    {% set elbow_angle = record.posture_reminder.swing_posture.elbow_straight %}
+                    {% set waist_angle = record.posture_reminder.swing_posture.waist_straight %}
+                    {% set elbow_ok = 167 <= elbow_angle <= 173 %}
+                    {% set waist_ok = waist_angle > 40 %}
+                    <tr>
+                        <td>{{ record.timestamp }}</td>
+                        <td>{{ record.ball.target_height }}</td>
+                        <td>({{ record.ball.current_position.x }}, {{ record.ball.current_position.y }}, {{ record.ball.current_position.z }})</td>
+                        
+                        <td>
+                            {{ elbow_angle }}°
+                            {{ '✔️' if elbow_ok else '❌' }}
+                        </td>
+                        <td>
+                            {{ waist_angle }}°
+                            {{ '✔️' if waist_ok else '❌' }}
+                        </td>
+                        <td>{{ record.posture_reminder.dominant_hand_and_foot.dominant_hand }}/{{ record.posture_reminder.dominant_hand_and_foot.front_foot }}</td>
+                        <!-- 發球成功與否 -->
+                        <td>
+                            {% if record.landing_analysis.serve_successful %}
+                                <span style="color: green;">✔️ 成功</span>
+                            {% else %}
+                                <span style="color: red;">❌ 失敗</span>
+                            {% endif %}
+                        </td>
+                        <td>({{ record.landing_analysis.court_position.x }}, {{ record.landing_analysis.court_position.y }})</td>
+                        <td> 
+                            <button class="highlight-btn">check</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+    </div>
+    <!-- JSON 資料 -->
+    <script id="serve-data" type="application/json">
+        {{ data.records | tojson }}
+    </script>
+    <!--用 Chart.js annotation 插件畫線 (自訂邊線、發球線)-->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <!-- Chart JS -->
+    <script >
+        const serveData = JSON.parse(document.getElementById("serve-data").textContent);
+        
+        // 發球成功與失敗圓餅圖
+        const successCount = serveData.filter(r => r.landing_analysis.serve_successful).length;
+        const failCount = serveData.length - successCount;
+
+        new Chart(document.getElementById('successChart'), {
+            type: 'pie',
+            data: {
+                labels: ['成功', '失敗'],
+                datasets: [{
+                    data: [successCount, failCount],
+                    backgroundColor: ['#4CAF50', '#F44336']
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        // 成功發球拋球高度的棒狀圖
+        const successfulHeights = serveData
+            .filter(r => r.landing_analysis.serve_successful)
+            .map((r, idx) => ({ index: idx + 1, height: r.ball.target_height }));
+
+        new Chart(document.getElementById('heightChart'), {
+            type: 'bar',
+            data: {
+                labels: successfulHeights.map(h => `#${h.index}`),
+                datasets: [{
+                    label: '拋球高度 (公尺)',
+                    data: successfulHeights.map(h => h.height),
+                    backgroundColor: '#2196F3'
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // 成功落點的散點圖
+        const successPositions = serveData
+            .filter(r => r.landing_analysis.serve_successful)
+            .map(r => ({
+                x: r.landing_analysis.court_position.x,
+                y: r.landing_analysis.court_position.y
+            }));
+
+        const failPositions = serveData
+            .filter(r => !r.landing_analysis.serve_successful)
+            .map(r => ({
+                x: r.landing_analysis.court_position.x,
+                y: r.landing_analysis.court_position.y
+            }));
+
+        new Chart(document.getElementById('positionChart'), {
+            type: 'scatter',
+            data: {
+                datasets: 
+                [
+                    {
+                        label: '成功落點位置',
+                        data: successPositions,
+                        backgroundColor: '#4CAF50' // 綠色
+                    },
+                    {
+                        label: '失敗落點位置',
+                        data: failPositions,
+                        backgroundColor: '#F44336' // 紅色
+                    }
+                ]
+            },
+            options: {
+                // 關閉自適應，才能固定canvas寬高
+                responsive: false,
+                // 讓設定的寬高生效
+                maintainAspectRatio: false,  
+                scales: {
+                    x: {
+                        title: { display: true, text: 'X 位置 (m公尺)' },
+                        min: 0,
+                        max: 10.97
+                    },
+                    y: {
+                        title: { display: true, text: 'Y 位置 (m公尺)' },
+                        min: 0,
+                        max: 23.78
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false  // 關閉圖例
+                        //fillStyle: '#FF9800',  // 無法固定顏色
+                    },
+                    annotation: {
+                        annotations: {
+                            // 以下單位 m
+                            // 左邊界
+                            leftLine: {
+                                type: 'line',
+                                xMin: 0,
+                                xMax: 0,
+                                yMin: 0,
+                                yMax: 23.78,
+                                borderColor: 'black',
+                                borderWidth: 2
+                            },
+                            //左內界
+                            leftsinglessideline: {
+                                type: 'line',
+                                xMin: 1.37,
+                                xMax: 1.37,
+                                yMin: 0,
+                                yMax: 23.78,
+                                borderColor: 'black',
+                                borderWidth: 2
+                            },
+                            // 右邊界
+                            rightLine: {
+                                type: 'line',
+                                xMin: 10.97,
+                                xMax: 10.97,
+                                yMin: 0,
+                                yMax: 23.78,
+                                borderColor: 'black',
+                                borderWidth: 2
+                            },
+                            //右內界
+                            rightsinglessideline: {
+                                type: 'line',
+                                xMin: 9.6,
+                                xMax: 9.6,
+                                yMin: 0,
+                                yMax: 23.78,
+                                borderColor: 'black',
+                                borderWidth: 2
+                            },
+                            // 發球線 (中央)
+                            serviceLine: {
+                                type: 'line',
+                                xMin: 1.37,
+                                xMax: 9.6,
+                                yMin: 5.49,
+                                yMax: 5.49,
+                                borderColor: 'black',
+                                borderWidth: 2
+                            },
+                            // 發球線 (中央)
+                            serviceLine2: {
+                                type: 'line',
+                                xMin: 1.37,
+                                xMax: 9.6,
+                                yMin: 18.29,
+                                yMax: 18.29,
+                                borderColor: 'black',
+                                borderWidth: 2
+                            },
+                            // 中央線
+                            centerServiceLine: {
+                                type: 'line',
+                                xMin: 5.485,
+                                xMax: 5.485,
+                                yMin: 5.49,
+                                yMax: 18.29,
+                                borderColor: 'black',
+                                borderWidth: 2,
+                            },
+                            // 底線
+                            baseline: {
+                                type: 'line',
+                                xMin: 0,
+                                xMax: 10.97,
+                                yMin: 0,
+                                yMax: 0,
+                                borderColor: 'black',
+                                borderWidth: 2
+                            },
+                            //頂線
+                            topline:{
+                                type: 'line',
+                                xMin: 0,
+                                xMax: 10.97,
+                                yMin: 23.78,
+                                yMax: 23.78,
+                                borderColor: 'black',
+                                borderWidth: 2
+                            },
+                            //網子
+                            net:{
+                                type: 'line',
+                                xMin: 0,
+                                xMax: 10.97,
+                                yMin: 11.89,
+                                yMax: 11.89,
+                                borderColor: 'black',
+                                borderWidth: 2
+                            }
+                            //
+                        }
+                    }
+                }
+            }
+        });
+        
+    </script>
+    <!--顯示發球點動畫-->
+    <script>
+        const positionChartCanvas = document.getElementById('positionChart');
+        const positionChartInstance = Chart.getChart(positionChartCanvas);
+
+        const defaultColors = positionChartInstance.data.datasets[0].data.map(() => '#FF9800');
+        positionChartInstance.data.datasets[0].pointBackgroundColor = [...defaultColors];
+        positionChartInstance.update();
+
+        let flashInterval = null;  // 記錄動畫用
+
+        document.querySelectorAll('.highlight-btn').forEach((btn, index) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                // 清除上一次的閃爍
+                clearInterval(flashInterval);
+                positionChartInstance.data.datasets[0].pointBackgroundColor = [...defaultColors];
+                positionChartInstance.update();
+
+                const chartIndex = getChartPointIndex(index);
+                if (chartIndex !== -1) {
+                    let isRed = false;
+                    flashInterval = setInterval(() => {
+                        positionChartInstance.data.datasets[0].pointBackgroundColor[chartIndex] = isRed ? '#FF9800' : '#4CAF50';//綠色
+                        positionChartInstance.update('none');  // 無動畫更新
+                        isRed = !isRed;
+                    }, 500);  // 每 0.5 秒切換
+                }
+            });
+        });
+
+        function getChartPointIndex(rowIndex) {
+            let successfulIndexes = [];
+            serveData.forEach((record, idx) => {
+                if (record.landing_analysis.serve_successful) {
+                    successfulIndexes.push(idx);
+                }
+            });
+            return successfulIndexes.indexOf(rowIndex);
+        }
+    </script>
+
+</body>
+</html>

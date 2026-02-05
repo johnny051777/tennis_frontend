@@ -1,0 +1,273 @@
+<!--http://127.0.0.1:8000/swing_practice（發球練習頁面）-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>揮拍練習紀錄</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: "Segoe UI", sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 30px; }
+        th, td { border: 1px solid #aaa; padding: 8px; text-align: center; }
+        th { background-color: #ddd; }
+    </style>
+
+    <!--  全域樣式與 Reset -->
+    <style>
+        :root {
+            --navbar-height: 60px;
+        }
+
+        /* 基本重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* 導覽列樣式 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--navbar-height);
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 999;
+        }
+
+        /* Logo 或標題 */
+        .navbar .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* 導覽按鈕群組 */
+        .navbar .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* 每個連結按鈕樣式 */
+        .navbar a {
+            text-decoration: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .navbar a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+    <!--背景動畫圓形-->
+    <style>
+        .content {
+            margin-top: calc(var(--navbar-height) + 20px);
+            padding: 60px 20px;
+            position: relative;
+            background: radial-gradient(circle at center, #eaffea 0%, #ffffff 100%);
+            overflow: hidden;
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .circle.green {
+            background-color: #A5D6A7;
+        }
+
+        .circle.white {
+            background-color: #F1F8E9;
+        }
+
+        .circle1 {
+            width: 120px;
+            height: 120px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .circle2 {
+            width: 200px;
+            height: 200px;
+            top: 60%;
+            left: 70%;
+            animation-delay: 2s;
+        }
+
+        .circle3 {
+            width: 80px;
+            height: 80px;
+            top: 40%;
+            left: 50%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-30px) rotate(360deg);
+            }
+        }
+
+        /* 讓主要內容蓋過背景 */
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+    <!-- 📊 圖表區塊 -->
+    <style>
+        .charts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .charts > div {
+            background: #f5f5f5;      /* 背景灰白一點，避免太深 */
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        canvas {
+            max-width: 400px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">網球助手</div>
+        <div class="nav-links">
+            <a href="index">首頁</a>
+            <a href="rules">規則解說</a>
+            <a href="score">記分板</a>
+            <a href="videos">影片解說</a>
+            <a href="wall_training">對牆練習</a>
+            <a href="serve_practice">發球練習</a>
+            <a href="swing_practice">揮拍練習</a>
+            <a href="throwing_practice">拋球練習</a>
+            <a href="chatroom">聊天室</a>
+        </div>
+    </div>
+    <div class="content">
+        <!-- 動態背景圓形 -->
+        <div class="circle green circle1"></div>
+        <div class="circle white circle2"></div>
+        <div class="circle green circle3"></div>
+        <div class="main-content">
+            <h1>🎾 揮拍練習紀錄</h1>
+            <p>以下為正手揮拍的動作分析</p>
+            <!-- JSON 資料 -->
+            <script id="swing-data" type="application/json">
+                {{ data.records | tojson }}
+            </script>
+            <div class="charts">
+                <div>
+                    <h2>腰部轉動情況</h2>
+                    <canvas id="waistChart"></canvas>
+                </div>
+                <div>
+                    <h2>手肘伸直情況</h2>
+                    <canvas id="elbowChart"></canvas>
+                </div>
+            </div>
+            <h2>系統總結評語</h2>
+            <p>
+                {% set comments = {} %}
+                {% for record in data.records %}
+                    {% if record.forehand_analysis.waist_rotation and record.forehand_analysis.elbow_straight %}
+                        {% set comment = "動作流暢，姿勢正確，繼續保持！" %}
+                    {% elif record.forehand_analysis.waist_rotation or record.forehand_analysis.elbow_straight %}
+                        {% set comment = "姿勢部分正確，仍有進步空間。" %}
+                    {% else %}
+                        {% set comment = "需加強基本揮拍動作，例如腰部轉動與手肘伸展。" %}
+                    {% endif %}
+                    {% set _ = comments.update({comment: comments.get(comment, 0) + 1}) %}
+                {% endfor %}
+
+                {% set most_common = comments | dictsort(true, 'value') | first %}
+                <strong>{{ most_common[0] }}</strong>
+            </p>
+            <h2>詳細紀錄</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>時間</th>
+                        <th>腰部轉動</th>
+                        <th>手肘伸直</th>
+                        <th>慣用手/前腳</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in data.records %}
+                    <tr>
+                        <td>{{ record.timestamp }}</td>
+                        <td>{{ '✔️' if record.forehand_analysis.waist_rotation else '❌' }}</td>
+                        <td>{{ '✔️' if record.forehand_analysis.elbow_straight else '❌' }}</td>
+                        <td>{{ record.posture_reminder.dominant_hand_and_foot.dominant_hand }}/
+                            {{ record.posture_reminder.dominant_hand_and_foot.front_foot }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        const swingData = JSON.parse(document.getElementById("swing-data").textContent);
+
+        // 統計腰部轉動
+        const waistYes = swingData.filter(r => r.forehand_analysis.waist_rotation).length;
+        const waistNo = swingData.length - waistYes;
+
+        new Chart(document.getElementById("waistChart"), {
+            type: "pie",
+            data: {
+                labels: ["有轉動", "未轉動"],
+                datasets: [{
+                    data: [waistYes, waistNo],
+                    backgroundColor: ["#4CAF50", "#F44336"]
+                }]
+            }
+        });
+
+        // 統計手肘伸直
+        const elbowYes = swingData.filter(r => r.forehand_analysis.elbow_straight).length;
+        const elbowNo = swingData.length - elbowYes;
+
+        new Chart(document.getElementById("elbowChart"), {
+            type: "bar",
+            data: {
+                labels: ["手肘伸直", "手肘彎曲"],
+                datasets: [{
+                    label: "次數",
+                    data: [elbowYes, elbowNo],
+                    backgroundColor: ["#2196F3", "#FF9800"]
+                }]
+            },
+            options: {
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    </script>
+</body>
+</html>
